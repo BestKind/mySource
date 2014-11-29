@@ -1,0 +1,294 @@
+本文以虚拟机的方式搭建LNMP环境
+1.下载安装VMware，此过程不予说明
+2.下载安装Linux系统，此过程也不予说明
+3.现在开始nginx环境的搭建
+	1.下载nginx，将其放在/usr/src/nginx1.7.7目录下
+		cd /usr/src/nginx1.7.7
+		wget http://nginx.org/download/nginx-1.7.7.tar.gz
+	2.nginx会有几个依赖包,我们首先安装依赖,不要安装过程中会报错:
+		yum  -y install zlib-devel pcre-devel openssl-devel
+	一般源代码安装分4个步骤(有人也会省去第一个步骤),解压(tar命令)预编译(执行源码包下的configure),编译(make),编译安装(make install)
+	3.首先我们解压源码包:
+		tar -zxvf nginx-1.7.7.tar.gz
+	这里解释下加压参数,z代表gzip(也就是后面的.gz文件)x代表加压,v表示显示详细信息,-f使用档案文件或设备(必选参数)
+	然后我们进行预编译,一般预编译会带上一些参数,已达到我们想要安装的效果,比如启用某个功能,禁用某个功能:
+	4.进入源码包目录进行预编译:
+		cd nginx-1.7.7
+		./configure --prefix=/usr/local/nginx   # 指定安装目录为/usr/local/nginx
+		./configure --with-openssl=/usr/include/openssl  # 启用ssl
+		./configure --with-pcre\                          # 启用正规表达式
+		./configure --with-http_stub_status_module        # 安装可以查看nginx状态的程序
+		其中./configure指执行当前目录下的configure文件
+		
+	5.预编译完成后我们就可以进行编译和安装:
+		make           #编译
+	执行后make后会有大量输出,等待输出完成后如果没有报错就可以进行安装执行:
+		make install   #安装
+		
+	安装完成后我们可以到相应的目录查看安装的文件:
+		ls /usr/local/nginx/
+			conf  html  logs  sbin
+	好了,下面我们启动nginx:
+		/usr/local/nginx/sbin/nginx
+	通过查看端口看nginx是否启动成功,nginx占用TCP的80端口,执行下面命令:
+		netstat -antlp | grep 80
+		tcp        0      0 0.0.0.0:80                  0.0.0.0:*                   LISTEN      5946/nginx
+		
+4.开始MySQL环境的搭建
+	1.下载MySQL，将其放在/usr/src/mysql5.6.22目录下,在http://dev.mysql.com/downloads/mysql/中查看最新的MySQL稳定版本
+		cd /usr/src/mysql-5.6
+		wget http://mysql.mirror.kangaroot.net/Downloads/MySQL-5.6/mysql-5.6.22.tar.gz
+	安装之前我们先做一些准备工作,
+
+	2.安装依赖:
+
+		yum -y install ncurses-devel
+		如果错误则使用
+		yum install ncurses ncurses-devel
+		1、安装 cmake 编译器。
+
+			1)、下载cmake
+
+			#cd /usr/src/cmake3.1
+
+			#wget http://www.cmake.org/files/v3.1/cmake-3.1.0-rc2.tar.gz
+
+			2)、解压cmake
+
+			#tar -zvxf cmake-3.1.0-rc2.tar.gz
+
+			3)、配置编译
+
+			#cd cmake-3.1.0-rc2
+			#yum -y install gcc
+			#yum -y install gcc-c++
+			#./configure
+			#make
+			#make install
+
+	3.添加必要的组和拥有者
+
+		#groupadd mysql
+
+		#useradd -r -g mysql mysql
+	
+	4.配置编译
+
+		如果是重装MySql，请先删除my.cnf如： rm -rf /etc/my.cnf
+
+		#mkdir /usr/local/mysql
+
+		#mkdir /usr/local/mysql/data
+
+		#cd /usr/local/src/mysql-5.5.9
+
+		#cmake . \
+		-DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
+		-DINSTALL_DATADIR=/usr/local/mysql/data \
+		-DDEFAULT_CHARSET=utf8 \
+		-DDEFAULT_COLLATION=utf8_general_ci \
+		-DEXTRA_CHARSETS=all \
+		-DENABLED_LOCAL_INFILE=1
+
+		参数说明：
+
+		-DCMAKE_INSTALL_PREFIX=/usr/local/mysql        //安装目录
+		-DINSTALL_DATADIR=/usr/local/mysql/data         //数据库存放目录
+		-DDEFAULT_CHARSET=utf8                    　　　　//使用utf8字符
+		-DDEFAULT_COLLATION=utf8_general_ci            //校验字符
+		-DEXTRA_CHARSETS=all                        　　　　//安装所有扩展字符集
+		-DENABLED_LOCAL_INFILE=1                    　　  //允许从本地导入数据
+
+		#make
+
+		#make install
+
+		注意事项：
+
+		重新编译时，需要清除旧的对象文件和缓存信息。 
+
+		# make clean
+		# rm -f  CMakeCache.txt
+		# rm -rf /etc/my.cnf 
+	
+	5.设置目录权限
+		# cd /usr/local/mysql
+		# chown -R root:mysql .　//把当前目录中所有文件的所有者所有者设为root，所属组为mysql
+
+		# chown -R mysql:mysql data
+		
+	6.配置文件
+		cp support-files/my-default.cnf /etc/my.cnf
+		
+	7.创建系统数据库的表
+		# cd /usr/local/mysql
+
+		# scripts/mysql_install_db --user=mysql
+		不行的话则使用
+		# scripts/mysql_install_db --force --user=mysql
+		
+	8.启动MySQL
+		server mysqld start
+
+5.开始php环境的配置
+	安装PHP前首先要安装几个源码包依赖:
+libmcrypt mhash mcrypt
+首先来安装几个源码包依赖:
+
+wget http://sourceforge.net/projects/mcrypt/files/Libmcrypt/2.5.8/libmcrypt-2.5.8.tar.bz2/download
+tar -jxvf libmcrypt-2.5.8.tar.bz2   # 这个包是bz2的  使用-j参数解压
+cd libmcrypt-2.5.8
+./configure
+make
+make install
+
+####################################################
+wget http://sourceforge.net/projects/mhash/files/mhash/0.9.9.9/mhash-0.9.9.9.tar.bz2/download
+tar -jxvf mhash-0.9.9.9.tar.bz2
+cd mhash-0.9.9.9
+./configure
+make
+make install
+# 这两个包安装完成后要把动态链接库做一个软连接到/usr/lib,以为接下来的mcrypt依赖于这两个包
+ln -s /usr/local/lib/libmcrypt* /usr/lib
+ln -s /usr/local/lib/libmhash.* /usr/lib/
+ln -s /usr/local/bin/libmcrypt-config /usr/bin/libmcrypt-config
+###########################################################
+wget http://sourceforge.net/projects/mcrypt/files/MCrypt/2.6.8/mcrypt-2.6.8.tar.gz/download
+tar -zxvf mcrypt-2.6.8.tar.gz
+cd mcrypt-2.6.8
+./configure
+make
+make install
+
+	1.下载php放在/usr/src/php目录下
+	wget http://cn2.php.net/get/php-5.5.19.tar.bz2/from/this/mirror
+	
+	安装依赖:
+
+yum –y install libxml2-devel curl-devel libpng-devel openldap-devel
+	
+	2.解压
+	tar -jxvf php-5.5.19.tar.bz2
+	
+	cd php-5.5.19
+	
+	./configure --prefix=/usr/local/php --with-mysql=/usr/local/mysql/ --with-zlib --enable-xml --disable-rpath --enable-safe-mode --enable-bcmath --enable-shmop --enable-sysvsem --with-curl --with-curlwrappers --enable-fpm --enable-fastcgi --with-mcrypt --with-gd --with-openssl --with-mhash --enable-sockets --with-ldap --with-ldap-sasl --with-xmlrpc -enable-zip --enable-soap
+	
+	出现错误
+	1.configure error xml2-config not found. please check your libxml2 installation 错误
+	解决方法：
+		1.检查是否安装了libxm包
+		[root@rh-linux software]# rpm -qa |grep  libxml2
+		libxml2-2.6.26-2.1.12
+		libxml2-python-2.6.26-2.1.12
+		重新安装libxml2和libxml2-devel包, yum安装的时候发现新版本会提示更新，需要更新的可以更新，不要跳过就行了。
+		[root@rh-linux /]# yum install libxml2
+		[root@rh-linux /]# yum install libxml2-devel -y
+		安装完之后查找xml2-config文件是否存在
+		[root@rh-linux /] # find / -name "xml2-config"
+		/usr/bin/xml2-config
+	2.configure: error: Please reinstall the libcurl distribution -
+    easy.h should be in <curl-dir>/include/curl/错误
+	解决方法：
+		1.#yum -y install curl-devel
+	3.configure: error: png.h not found.
+	解决方法：
+		1.#yum install libpng-devel
+	4.configure: error: Cannot find ldap.h
+	解决方案：
+		1.yum list openldap
+		yum list openldap-devel
+		安装 ：
+		yum install openldap
+		yum install openldap-devel
+	5.configure: error: Don't know how to define struct flock on this system, set --enable-opcache=no
+	解决方案：
+		方案1.vi /etc/ld.so.conf 加入/usr/local/lib
+		echo "/usr/local/lib">>/etc/ld.so.conf.d/local.conf
+		ldconfig -v
+		方案2.使用nginx+php，就必须使用php
+6.重新安装php环境
+1.安装依赖包
+
+yum install gcc make gd-devel libjpeg-devel libpng-devel libxml2-devel bzip2-devel libcurl-devel libaio -y
+
+ 
+
+2.安装php5.5
+
+tar -zxvf php-5.5.6.tar.gz
+
+cd php-5.5.6
+
+./configure
+
+make
+
+make install
+配置php
+cp php-5.5.6/php.ini-production /usr/local/php5/etc/php.ini  #php配置文件
+
+cp /usr/local/php5/etc/php-fpm.conf.default /usr/local/php5/etc/php-fpm.conf #php-fpm配置文件
+
+如果没找到php-fpm
+
+则使用yum --enablerepo=remi,remi-test install nginx php php-fpm php-common安装php-fpm
+
+7.然后配置nginx,编辑nginx配置文件
+
+vi /usr/local/nginx/conf/nginx.conf
+
+修改nginx配置文件支持php:
+
+    server {
+        listen       80;
+        server_name  localhost;
+
+        #charset koi8-r;
+
+        #access_log  logs/host.access.log  main;
+
+        location / {
+            root   html;
+            index  index.php index.html index.htm;         # 添加index.php的首页文件
+        }
+
+        # 添加下面内容
+        location ~ \.php$ {
+            fastcgi_pass        unix:/var/run/php-fpm/php-fpm.sock;
+            fastcgi_index       index.php;
+            fastcgi_param SCRIPT_FILENAME $document_root/$fastcgi_script_name;
+            include fastcgi_params;
+            include fastcgi.conf;
+        }
+
+修改完毕后保存退出重启nginx:
+
+8.配置虚拟机，在nginx.conf文件底部增加 include vhost/*.conf
+在nginx.conf文件的同级目录下创建文件夹vhost
+在该文件夹下创建所需的虚拟机对应的**.conf文件，文件内容为
+server {
+        listen       80;
+        server_name **.com;
+        index index.html index.htm index.php;
+        root  /home/***;
+
+        location / {
+                if (!-e $request_filename) {
+                        rewrite . /index.php last;
+                        break;
+                }
+        }
+
+        location ~ .*\.(php|php5)?$ {
+                fastcgi_pass 127.0.0.1:9000;
+                fastcgi_index index.php;
+                fastcgi_param  SCRIPT_FILENAME /**$fastcgi_script_name;
+                include fastcgi_params;
+        }
+
+        access_log  /***/**.log;
+}
+保存退出，然后重启nginx
+/usr/local/nginx/sbin/nginx
