@@ -1,0 +1,18 @@
+1.在滚动条所在的元素(article)滚动时触发检测事件
+2.当滚动条所在的元素的scrollTop >= 内容元素的高度(wrap) - 滚动条所在元素的高度时，事件成立，并加载对应的事件或方法
+
+$(document).ready(function(){
+		$('article').scroll(function(){
+			if (($('article').scrollTop()) >= ($('.wrap').height()-$('article').height())) {
+				$.ajax({
+					type:"post",
+					url:"",
+					data:{page:$("#page").val()},
+					dataType:"json",
+					success:function(data) {
+						
+				  }
+				});
+			}
+		});
+});
