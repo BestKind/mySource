@@ -1,0 +1,83 @@
+<!-- js和图片对应更换 -->
+<!--
+
+  1.外层的div的定位使用relative，使得这个div方便定位
+  2.因为ul是用来滑动的，所以相对于其父层的div使用absolute定位
+  3.li中的元素是图片，是随时移动的，故要使用relative定位
+
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+	<meta charset="utf-8" />
+	
+	<script type="text/javascript" src="/js/jquery-1.8.1.min.js"></script>
+	
+  </head>
+  <body>
+
+	<style>
+	*{
+		margin: 0;
+		padding: 0;
+	}
+	#scroll{
+		height: 220px;
+		overflow: hidden;
+		width: 640px;
+		margin: 0 auto;
+		position: relative;
+	}
+	#scroll ul{
+		position: absolute; 
+		left: 0;
+		top: 0;
+		height: 220px;
+		overflow: hidden;
+	}
+	#scroll ul li{
+		height: 220px;
+		width: 640px;
+		float: left;
+		list-style: none;
+	}
+	#scroll ul li img{
+		width: 640px;
+	}
+	</style>
+	
+	<script>
+
+		$(document).ready(function(){
+			var number	= $("#scroll li").length;
+			var w		= $("#scroll li img").width();
+			var width	= w*number;
+			$("#scroll ul").width(width);
+			function autoscroll(){
+				var distance = -1*w;
+				$('#scroll ul').stop().animate({left:distance}, "slow",function(){
+
+					var firstItem = $("#scroll ul li").first();
+					$("#scroll").find("ul").append(firstItem);
+					$(this).css("left","0px");
+					
+				});
+			}
+			var scrollChange = setInterval(autoscroll,5000);
+
+		});
+
+	</script>
+
+	<article>
+
+		<div id="scroll">
+			<ul>
+				<li><img src="/image/banner1.jpg"/></li>
+				<li><img src="/image/banner2.jpg"/></li>
+				<li><img src="/image/banner3.jpg"/></li>
+			</ul>
+		</div>
+	</article>
+  </body>
+</html>
